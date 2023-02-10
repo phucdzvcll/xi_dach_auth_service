@@ -53,7 +53,7 @@ void main(List<String> args) async {
   final handler = Pipeline().addMiddleware(logRequests()).addHandler(_router);
 
   // For running in containers, we respect the PORT environment variable.
-  final port = int.parse(Platform.environment['PORT'] ?? '8089');
+  final port = int.parse(Platform.environment['PORT'] ?? '8989');
 
   await dbController.init();
 
