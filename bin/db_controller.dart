@@ -27,6 +27,10 @@ class DBController {
         'CREATE TABLE if not exists User (UserName varchar(255) NOT NULL Primary key, Password varchar(255) NOT NULL, ID varchar(255) , Active BOOLEAN );';
     await _connection.query(script);
 
+    var script2 =
+        'CREATE TABLE if not exists Point (id varchar(255) NOT NULL Primary key, P int NOT NULL, ID varchar(255) );';
+    await _connection.query(script2);
+
     return _connection;
   }
 
