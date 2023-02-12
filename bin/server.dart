@@ -39,9 +39,10 @@ Future<Response> _signIn(Request request) async {
     final String? userName = json['userName'];
     final String? password = json['password'];
     final id = await dbController.signIn(userName, password);
-    return Response.ok({"userName": userName, "ID": id});
+    return Response.ok(jsonEncode({"userName": userName, "ID": id}),
+        headers: {"content-type": "application/json"});
   } catch (e) {
-    return Response.badRequest(body: e is String ? e : "Something went wrong!");
+    return Response.badRequest(body: e is String ? e : e.toString());
   }
 }
 
@@ -53,7 +54,7 @@ void main(List<String> args) async {
   final handler = Pipeline().addMiddleware(logRequests()).addHandler(_router);
 
   // For running in containers, we respect the PORT environment variable.
-  final port = int.parse("8982");
+  final port = int.parse(Platform.environment['PORT'] ?? '8989');
 
   await dbController.init();
 
