@@ -3,10 +3,23 @@ import 'package:mysql1/mysql1.dart';
 import 'package:uuid/uuid.dart';
 
 class DBController {
-  late MySqlConnection _connection;
   final _uuid = Uuid();
 
-  Future<MySqlConnection> init() async {
+  Future<void> init() async {
+    ConnectionSettings settings = _getSetting();
+    final connection = await MySqlConnection.connect(settings);
+
+    var script =
+        'CREATE TABLE if not exists User (UserName varchar(255) NOT NULL Primary key, Password varchar(255) NOT NULL , ID varchar(255) , Active BOOLEAN );';
+    await connection.query(script);
+
+    var script2 =
+        'CREATE TABLE if not exists Point (id varchar(255) NOT NULL Primary key, P int NOT NULL );';
+    await connection.query(script2);
+    await connection.close();
+  }
+
+  ConnectionSettings _getSetting() {
     Map<String, String> envVars = Platform.environment;
 
     var sqlHost = envVars['MYSQL_HOSTS'] ?? 'localhost';
@@ -21,23 +34,14 @@ class DBController {
       user: dbUser,
       host: sqlHost,
     );
-    _connection = await MySqlConnection.connect(settings);
-
-    var script =
-        'CREATE TABLE if not exists User (UserName varchar(255) NOT NULL Primary key, Password varchar(255) NOT NULL, ID varchar(255) , Active BOOLEAN );';
-    await _connection.query(script);
-
-    var script2 =
-        'CREATE TABLE if not exists Point (id varchar(255) NOT NULL Primary key, P int NOT NULL, ID varchar(255) );';
-    await _connection.query(script2);
-
-    return _connection;
+    return settings;
   }
 
   Future<String?> createAccount(String? userName, String? password) async {
     if (userName != null && password != null) {
+      final connection = await MySqlConnection.connect(_getSetting());
       var scriptCheckExistUser = "Select ID from User where UserName = ? ;";
-      final results = await _connection.query(scriptCheckExistUser, [userName]);
+      final results = await connection.query(scriptCheckExistUser, [userName]);
       if (results.isNotEmpty) {
         throw "User early exist";
       }
@@ -46,7 +50,8 @@ class DBController {
 
       var scrip =
           "INSERT INTO  User (UserName, Password, ID, Active) VALUES  (? , ?, ?, ?);";
-      await _connection.query(scrip, [userName, password, id, true]);
+      await connection.query(scrip, [userName, password, id, true]);
+      await connection.close();
       return "Success";
     } else {
       return "user name or password invalid";
@@ -55,11 +60,14 @@ class DBController {
 
   Future<String> signIn(String? userName, String? password) async {
     if (userName != null && password != null) {
+      final connection = await MySqlConnection.connect(_getSetting());
       var scrip = "Select ID from User where UserName = ? and Password = ? ;";
-      final results = await _connection.query(scrip, [userName, password]);
+      final results = await connection.query(scrip, [userName, password]);
       if (results.isNotEmpty) {
+        await connection.close();
         return results.first[0];
       } else {
+        await connection.close();
         throw "Login failed";
       }
     } else {
